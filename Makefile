@@ -1,0 +1,2 @@
+setup:
+	scripts/setup.sh
