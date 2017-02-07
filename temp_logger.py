@@ -4,7 +4,7 @@ from max31855.max31855 import MAX31855, MAX31855Error
 import librato
 import yaml
 
-f = open('/etc/temp-logger.yaml')
+f = open('/etc/temp-logger.yml')
 config = yaml.safe_load(f)
 f.close()
 
