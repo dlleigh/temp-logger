@@ -3,8 +3,9 @@ import time
 from max31855.max31855 import MAX31855, MAX31855Error
 import librato
 import yaml
+import os
 
-f = open('/etc/temp-logger.yml')
+f = open(os.environ['TEMP_LOGGER_CONFIG'])
 config = yaml.safe_load(f)
 f.close()
 
