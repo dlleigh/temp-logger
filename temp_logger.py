@@ -1,10 +1,19 @@
 # Multi-chip example
 import time
 from max31855.max31855 import MAX31855, MAX31855Error
-cs_pins = [25, 12]
-clock_pin = 24
-data_pin = 23
+import librato
+import yaml
+
+f = open('/etc/temp-logger.yaml')
+config = yaml.safe_load(f)
+f.close()
+
+api = librato.connect(config['librato_email'], config['librato_key'])
+cs_pins = config['cs_pins']
+clock_pin = config['clock_pin']
+data_pin = config['data_pin']
 units = "f"
+
 thermocouples = []
 for cs_pin in cs_pins:
     thermocouples.append(MAX31855(cs_pin, clock_pin, data_pin, units))
