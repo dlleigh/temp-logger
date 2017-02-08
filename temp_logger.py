@@ -10,7 +10,11 @@ config = yaml.safe_load(f)
 f.close()
 
 api = librato.connect(config['librato_email'], config['librato_key'])
-cs_pins = config['cs_pins']
+cs_pins = []
+pin_mapping = {}
+for thermocouple in config['thermocouples']:
+  cs_pins.append(thermocouple['pin'])
+  pin_mapping[thermocouple['pin']] = thermocouple['name']
 clock_pin = config['clock_pin']
 data_pin = config['data_pin']
 units = "f"
@@ -21,6 +25,7 @@ for cs_pin in cs_pins:
 running = True
 while(running):
     try:
+        q   = api.new_queue()
         for thermocouple in thermocouples:
             rj = thermocouple.get_rj()
             try:
@@ -28,8 +33,11 @@ while(running):
             except MAX31855Error as e:
                 tc = "Error: "+ e.value
                 running = False
-            print("tc: {} and rj: {}".format(tc, rj))
+            name = pin_mapping[thermocouple.cs_pin]
+            print("source: %s temp: %s" % (name, tc))
+            q.add('temperature',tc,source=name)
         time.sleep(1)
+        q.submit()
     except KeyboardInterrupt:
         running = False
 for thermocouple in thermocouples:
