@@ -17,6 +17,7 @@ for thermocouple in config['thermocouples']:
   pin_mapping[thermocouple['pin']] = thermocouple['name']
 clock_pin = config['clock_pin']
 data_pin = config['data_pin']
+frequency = config['frequency']
 units = "f"
 
 thermocouples = []
@@ -36,7 +37,7 @@ while(running):
             name = pin_mapping[thermocouple.cs_pin]
             print("source: %s temp: %s" % (name, tc))
             q.add('temperature',tc,source=name)
-        time.sleep(1)
+        time.sleep(frequency)
         q.submit()
     except KeyboardInterrupt:
         running = False
