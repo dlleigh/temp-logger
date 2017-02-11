@@ -1,9 +1,12 @@
 # Multi-chip example
 import time
+import logging
 from max31855.max31855 import MAX31855, MAX31855Error
 import librato
 import yaml
 import os
+
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 f = open(os.environ['TEMP_LOGGER_CONFIG'])
 config = yaml.safe_load(f)
@@ -35,11 +38,13 @@ while(running):
                 tc = "Error: "+ e.value
                 running = False
             name = pin_mapping[thermocouple.cs_pin]
-            print("source: %s temp: %s" % (name, tc))
+            logging.info("source: %s temp: %s" % (name, tc))
             q.add('temperature',tc,source=name)
         time.sleep(frequency)
         q.submit()
     except KeyboardInterrupt:
         running = False
+    except:
+        logging.error("some type of error occurred!")
 for thermocouple in thermocouples:
     thermocouple.cleanup()
