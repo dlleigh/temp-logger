@@ -6,11 +6,12 @@ import librato
 import yaml
 import os
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 f = open(os.environ['TEMP_LOGGER_CONFIG'])
 config = yaml.safe_load(f)
 f.close()
+
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO, filename=config['logfile'])
 
 api = librato.connect(config['librato_email'], config['librato_key'])
 cs_pins = []
