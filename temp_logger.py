@@ -1,6 +1,7 @@
 # Multi-chip example
 import time
 import logging
+import logging.handlers
 from max31855.max31855 import MAX31855, MAX31855Error
 import librato
 import yaml
@@ -11,7 +12,12 @@ f = open(os.environ['TEMP_LOGGER_CONFIG'])
 config = yaml.safe_load(f)
 f.close()
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO, filename=config['logfile'])
+log_handler = logging.handlers.WatchedFileHandler(config['logfile'])
+formatter = logging.Formatter('%(asctime)s %(message)s')
+log_handler.setFormatter(formatter)
+logger = logging.getLogger()
+logger.addHandler(log_handler)
+logger.setLevel(logging.INFO)
 
 api = librato.connect(config['librato_email'], config['librato_key'])
 cs_pins = []
