@@ -43,6 +43,7 @@ while(running):
                 tc = thermocouple.get()
             except MAX31855Error as e:
                 tc = "Error: "+ e.value
+                logging.error("source: %s temp: %s" % (name, tc))
                 continue
             name = pin_mapping[thermocouple.cs_pin]
             logging.info("source: %s temp: %s" % (name, tc))
