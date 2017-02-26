@@ -39,13 +39,13 @@ while(running):
         q   = api.new_queue()
         for thermocouple in thermocouples:
             rj = thermocouple.get_rj()
+            name = pin_mapping[thermocouple.cs_pin]
             try:
                 tc = thermocouple.get()
             except MAX31855Error as e:
                 tc = "Error: "+ e.value
                 logging.error("source: %s temp: %s" % (name, tc))
                 continue
-            name = pin_mapping[thermocouple.cs_pin]
             logging.info("source: %s temp: %s" % (name, tc))
             q.add('temperature',tc,source=name)
         time.sleep(frequency)
