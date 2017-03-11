@@ -48,6 +48,7 @@ while(running):
                 continue
             logging.info("source: %s temp: %s" % (name, tc))
             q.add('temperature',tc,source=name)
+            time.sleep(0.5)
         time.sleep(frequency)
         q.submit()
     except KeyboardInterrupt:
