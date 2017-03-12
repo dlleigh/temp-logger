@@ -2,7 +2,7 @@
 import time
 import logging
 import logging.handlers
-from max31855.max31855 import MAX31855, MAX31855Error
+from max31855 import MAX31855, MAX31855Error
 import librato
 import yaml
 import os
