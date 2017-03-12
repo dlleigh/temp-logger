@@ -7,6 +7,14 @@ import librato
 import yaml
 import os
 
+class MAX31855a(MAX31855):
+    def get(self):
+        self.read()
+        try:
+            MAX31855.checkErrors(self)
+        except MAX31855Error as error:
+            logging.error("cs_pin: %s error: %s" % (self.cs_pin, error.value))
+        return getattr(self, "to_" + self.units)(self.data_to_tc_temperature())
 
 f = open(os.environ['TEMP_LOGGER_CONFIG'])
 config = yaml.safe_load(f)
@@ -32,7 +40,7 @@ units = "f"
 
 thermocouples = []
 for cs_pin in cs_pins:
-    thermocouples.append(MAX31855(cs_pin, clock_pin, data_pin, units))
+    thermocouples.append(MAX31855a(cs_pin, clock_pin, data_pin, units))
 running = True
 while(running):
     try:
@@ -40,12 +48,7 @@ while(running):
         for thermocouple in thermocouples:
             rj = thermocouple.get_rj()
             name = pin_mapping[thermocouple.cs_pin]
-            try:
-                tc = thermocouple.get()
-            except MAX31855Error as e:
-                tc = "Error: "+ e.value
-                logging.error("source: %s temp: %s" % (name, tc))
-                continue
+            tc = thermocouple.get()
             logging.info("source: %s temp: %s" % (name, tc))
             q.add('temperature',tc,source=name)
             time.sleep(0.5)
