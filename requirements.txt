@@ -1,7 +1,15 @@
 appdirs==1.4.0
+certifi==2025.1.31
+influxdb3-python==0.11.0
 librato-metrics==3.0.1
+max31855 @ git+https://github.com/Tuckie/max31855.git@71b2724f6280a0970ff094290c63e01c889126c3
 packaging==16.8
+pyarrow==19.0.1
 pyparsing==2.1.10
-pyyaml>=4.2b1
+python-dateutil==2.9.0.post0
+PyYAML==6.0.2
+reactivex==4.0.4
+setuptools==75.8.2
 six==1.10.0
-git+https://github.com/Tuckie/max31855.git#egg=max31855
+typing_extensions==4.12.2
+urllib3==2.3.0
