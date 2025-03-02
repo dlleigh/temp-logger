@@ -1,0 +1,14 @@
+[Unit]
+Description=temp-logger
+After=network.target
+
+[Service]
+ExecStart=/home/pi/temp-logger.sh
+WorkingDirectory=/home/pi
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target

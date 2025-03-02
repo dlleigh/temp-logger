@@ -1,10 +1,1 @@
-/htmlcov/
-/venv/
-
-/.coverage
-
-/.vagrant
-
-/max31855/
-
-*.pyc
+.venv/
