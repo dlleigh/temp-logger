@@ -8,7 +8,8 @@ WorkingDirectory=/home/pi
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
-User=root
+User=pi
+Group=pi
 
 [Install]
 WantedBy=multi-user.target
