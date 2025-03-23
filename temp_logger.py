@@ -45,8 +45,8 @@ for cs_pin in cs_pins:
 running = True
 while(running):
     try:
-        librato_api = librato.connect(config['librato_email'], config['librato_key'])
-        librato_queue = librato_api.new_queue()
+        # librato_api = librato.connect(config['librato_email'], config['librato_key'])
+        # librato_queue = librato_api.new_queue()
         influxdb_client = InfluxDBClient(url=config['influxdb_url'], token=config['influxdb_token'], org=config['influxdb_org'])
         write_api = influxdb_client.write_api(write_options=SYNCHRONOUS)
         points = []
@@ -60,7 +60,7 @@ while(running):
             point = Point("oven-temp").tag("location", location).tag("name",name).field("temperature", tc)
             points.append(point)
             time.sleep(0.5)
-        librato_queue.submit()
+        # librato_queue.submit()
         write_api.write(bucket=config['influxdb_bucket'], record=points)
         time.sleep(frequency)
     except KeyboardInterrupt:
