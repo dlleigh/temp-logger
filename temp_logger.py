@@ -56,7 +56,7 @@ while(running):
             location = pin_mapping[thermocouple.cs_pin]['location'] 
             tc = thermocouple.get()
             logging.info("source: %s temp: %s" % (name, tc))
-            librato_queue.add('temperature',tc,source=name)
+            # librato_queue.add('temperature',tc,source=name)
             point = Point("oven-temp").tag("location", location).tag("name",name).field("temperature", tc)
             points.append(point)
             time.sleep(0.5)
