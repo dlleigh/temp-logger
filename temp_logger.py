@@ -67,9 +67,11 @@ while(running):
             predictor = predictors[thermocouple.cs_pin]
             predictor.add_measurement(tc)
             prediction_30min = predictor.predict_temperature(30)
+            prediction_1hr = predictor.predict_temperature(60)
+            prediction_2hr = predictor.predict_temperature(120)
             
-            logging.info("source: %s temp: %s prediction_30min: %s" % 
-                        (name, tc, prediction_30min))
+            logging.info("source: %s temp: %s prediction_30min: %s prediction_1hr: %s prediction_2hr: %s" % 
+                        (name, tc, prediction_30min, prediction_1hr, prediction_2hr))
             
             # Create points for current temperature and prediction
             current_point = Point("oven-temp")\
@@ -84,6 +86,22 @@ while(running):
                     .tag("name", name)\
                     .tag("prediction_minutes", "30")\
                     .field("temperature", prediction_30min)
+                points.append(prediction_point)
+                
+            if prediction_1hr is not None:
+                prediction_point = Point("oven-temp-prediction")\
+                    .tag("location", location)\
+                    .tag("name", name)\
+                    .tag("prediction_minutes", "60")\
+                    .field("temperature", prediction_1hr)
+                points.append(prediction_point)
+                
+            if prediction_2hr is not None:
+                prediction_point = Point("oven-temp-prediction")\
+                    .tag("location", location)\
+                    .tag("name", name)\
+                    .tag("prediction_minutes", "120")\
+                    .field("temperature", prediction_2hr)
                 points.append(prediction_point)
                 
             time.sleep(0.5)
