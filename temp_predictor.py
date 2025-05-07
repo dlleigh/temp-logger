@@ -13,7 +13,7 @@ class TemperaturePredictor:
         self.temperatures.append((datetime.now(), temperature))
         
     def predict_temperature(self, minutes_ahead=30):
-        """Predict temperature after specified minutes using exponential fit"""
+        """Predict temperature after specified minutes using polynomial fit"""
         if len(self.temperatures) < 10:  # Need minimum points for reasonable fit
             return None
             
@@ -27,19 +27,18 @@ class TemperaturePredictor:
                          for t in self.temperatures])
         temps = np.array([t[1] for t in self.temperatures])
         
-        # Exponential function to fit: temp = a * exp(b * t) + c
-        def exp_func(t, a, b, c):
-            return a * np.exp(b * t) + c
+        # Third-degree polynomial function: temp = a*t³ + b*t² + c*t + d
+        def polynomial(t, a, b, c, d):
+            return a * t**3 + b * t**2 + c * t + d
             
         try:
-            # Fit exponential curve
-            popt, _ = curve_fit(exp_func, times, temps, 
-                              p0=[temps.max()-temps.min(), -0.01, temps.min()],
-                              maxfev=2000)
+            # Fit polynomial curve with initial guess
+            p0 = [0, 0, 0, temps.mean()]  # Initial parameters
+            popt, _ = curve_fit(polynomial, times, temps, p0=p0, maxfev=2000)
             
             # Predict future temperature
             future_time = times[-1] + minutes_ahead
-            predicted_temp = exp_func(future_time, *popt)
+            predicted_temp = polynomial(future_time, *popt)
             
             return predicted_temp
             
