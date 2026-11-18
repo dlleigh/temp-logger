@@ -3,7 +3,7 @@ import csv
 import time
 import logging
 import logging.handlers
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from max31855 import MAX31855, MAX31855Error
 import yaml
 import os
@@ -49,6 +49,27 @@ for cs_pin in cs_pins:
 data_dir = config.get('data_dir', '/home/pi/oven-data')
 os.makedirs(data_dir, exist_ok=True)
 
+# Daily CSV files accumulate forever otherwise, slowly filling the SD card.
+csv_retention_days = config.get('csv_retention_days', 30)
+
+
+def cleanup_old_csvs():
+    """Delete daily CSV files older than the retention window."""
+    cutoff = date.today() - timedelta(days=csv_retention_days)
+    for fname in os.listdir(data_dir):
+        if not fname.endswith('.csv'):
+            continue
+        try:
+            fdate = datetime.strptime(fname[:-4], '%Y-%m-%d').date()
+        except ValueError:
+            continue
+        if fdate < cutoff:
+            try:
+                os.remove(os.path.join(data_dir, fname))
+                logging.info("Removed old CSV %s" % fname)
+            except OSError as e:
+                logging.error("Could not remove %s: %s" % (fname, e))
+
 # Load calibration file if available
 calibration = {}
 calibration_path = config.get('calibration_file', '/etc/calibration.yml')
@@ -69,13 +90,31 @@ for cs_pin in cs_pins:
         tau2=cal.get('tau2'),
     )
 
+def connect_influx():
+    """Open an InfluxDB client + write API. Created once and reused across the
+    loop; previously this was rebuilt every cycle, leaking a socket each time."""
+    client = InfluxDBClient(url=config['influxdb_url'],
+                            token=config['influxdb_token'],
+                            org=config['influxdb_org'])
+    return client, client.write_api(write_options=SYNCHRONOUS)
+
+
+influxdb_client = None
+write_api = None
+last_cleanup = None
+
 running = True
 while(running):
     try:
-        influxdb_client = InfluxDBClient(url=config['influxdb_url'], 
-                                       token=config['influxdb_token'], 
-                                       org=config['influxdb_org'])
-        write_api = influxdb_client.write_api(write_options=SYNCHRONOUS)
+        if write_api is None:
+            influxdb_client, write_api = connect_influx()
+
+        # Trim old CSVs once a day (and on first iteration).
+        today = date.today()
+        if last_cleanup != today:
+            cleanup_old_csvs()
+            last_cleanup = today
+
         points = []
         readings = []
 
@@ -93,7 +132,9 @@ while(running):
             prediction_1hr = predictor.predict_temperature(60)
             prediction_2hr = predictor.predict_temperature(120)
             
-            logging.info("source: %s temp: %s prediction_30min: %s prediction_1hr: %s prediction_2hr: %s" % 
+            # Per-cycle, per-sensor -- logged at DEBUG so a healthy run stays
+            # quiet (every 30s x 3 sensors would otherwise grow the log forever).
+            logging.debug("source: %s temp: %s prediction_30min: %s prediction_1hr: %s prediction_2hr: %s" %
                         (name, tc, prediction_30min, prediction_1hr, prediction_2hr))
             
             # Create points for current temperature and prediction
@@ -129,10 +170,9 @@ while(running):
                 
             time.sleep(0.5)
 
-        write_api.write(bucket=config['influxdb_bucket'], record=points)
-
-        # Append readings to daily CSV file
-        csv_path = os.path.join(data_dir, date.today().strftime('%Y-%m-%d') + '.csv')
+        # Append readings to the daily CSV first, so local data survives even
+        # if the InfluxDB write below fails (e.g. network/cloud outage).
+        csv_path = os.path.join(data_dir, today.strftime('%Y-%m-%d') + '.csv')
         write_header = not os.path.exists(csv_path)
         with open(csv_path, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
@@ -142,12 +182,26 @@ while(running):
             for name, location, tc in readings:
                 writer.writerow([now, name, location, tc])
 
+        write_api.write(bucket=config['influxdb_bucket'], record=points)
+
         time.sleep(frequency)
         
     except KeyboardInterrupt:
         running = False
     except Exception as e:
         logging.error("Error: %s" % e)
+        # Drop the client so the next iteration reconnects cleanly, and back off
+        # so a persistent failure (e.g. network down) doesn't spin hot.
+        if influxdb_client is not None:
+            try:
+                influxdb_client.close()
+            except Exception:
+                pass
+        influxdb_client = None
+        write_api = None
+        time.sleep(frequency)
 
+if influxdb_client is not None:
+    influxdb_client.close()
 for thermocouple in thermocouples:
     thermocouple.cleanup()
