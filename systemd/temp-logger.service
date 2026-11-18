@@ -1,15 +1,26 @@
 [Unit]
 Description=temp-logger
-After=network.target
+# network-online.target means we actually have connectivity (IP + routing),
+# not just that the network stack started -- needed for the git pull below and
+# for reaching InfluxDB Cloud.
+Wants=network-online.target
+After=network-online.target
 
 [Service]
-ExecStart=/home/pi/temp-logger.sh
-WorkingDirectory=/home/pi
-StandardOutput=inherit
-StandardError=inherit
+Type=simple
+WorkingDirectory=/home/pi/temp-logger
+Environment=TEMP_LOGGER_CONFIG=/etc/temp-logger.yml
+# Best-effort update: pull latest code if the network is up. The leading '-'
+# makes failure non-fatal, so no network == we just run the last-good checkout.
+ExecStartPre=-/usr/bin/git -C /home/pi/temp-logger pull --ff-only
+ExecStart=/home/pi/temp-logger/.venv/bin/python /home/pi/temp-logger/temp_logger.py
 Restart=always
+# Don't hammer restarts (and don't spin on a bad checkout) on a crash loop.
+RestartSec=10
 User=pi
 Group=pi
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

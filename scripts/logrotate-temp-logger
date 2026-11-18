@@ -1,0 +1,13 @@
+# Install to /etc/logrotate.d/temp-logger (handled by scripts/setup.sh).
+# The logger uses Python's WatchedFileHandler, which reopens the file when the
+# inode changes -- so the default rename+create strategy works (do NOT use
+# copytruncate here).
+/home/pi/temp-logger.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 pi pi
+}
