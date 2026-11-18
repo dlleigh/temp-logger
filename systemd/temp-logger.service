@@ -8,17 +8,20 @@ After=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/pi/temp-logger
+# __REPO_DIR__ and __USER__ are filled in by scripts/setup.sh at install time
+# based on the user and checkout location, so this adapts to whatever account
+# the Pi uses (pi, dleigh, ...) instead of hardcoding /home/pi.
+WorkingDirectory=__REPO_DIR__
 Environment=TEMP_LOGGER_CONFIG=/etc/temp-logger.yml
 # Best-effort update: pull latest code if the network is up. The leading '-'
 # makes failure non-fatal, so no network == we just run the last-good checkout.
-ExecStartPre=-/usr/bin/git -C /home/pi/temp-logger pull --ff-only
-ExecStart=/home/pi/temp-logger/.venv/bin/python /home/pi/temp-logger/temp_logger.py
+ExecStartPre=-/usr/bin/git -C __REPO_DIR__ pull --ff-only
+ExecStart=__REPO_DIR__/.venv/bin/python __REPO_DIR__/temp_logger.py
 Restart=always
 # Don't hammer restarts (and don't spin on a bad checkout) on a crash loop.
 RestartSec=10
-User=pi
-Group=pi
+User=__USER__
+Group=__USER__
 StandardOutput=journal
 StandardError=journal
 

@@ -1,13 +1,15 @@
-# Install to /etc/logrotate.d/temp-logger (handled by scripts/setup.sh).
+# Template installed to /etc/logrotate.d/temp-logger by scripts/setup.sh, which
+# fills in __LOGFILE__ (from /etc/temp-logger.yml) and __USER__.
+#
 # The logger uses Python's WatchedFileHandler, which reopens the file when the
 # inode changes -- so the default rename+create strategy works (do NOT use
 # copytruncate here).
-/home/pi/temp-logger.log {
+__LOGFILE__ {
     daily
     rotate 7
     compress
     delaycompress
     missingok
     notifempty
-    create 0644 pi pi
+    create 0644 __USER__ __USER__
 }

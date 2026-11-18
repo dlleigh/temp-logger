@@ -8,9 +8,10 @@ backup.
 
 ### Configuration
 
-Create a YAML file on your pi at `/etc/temp-logger.yml` like:
+Create a YAML file on your pi at `/etc/temp-logger.yml` like (use your own home
+directory in the paths -- modern Raspberry Pi OS has no default `pi` user):
 ```yaml
-logfile: /home/pi/temp-logger.log
+logfile: /home/YOU/temp-logger.log
 frequency: 30
 clock_pin: 21
 data_pin: 20
@@ -21,7 +22,7 @@ thermocouples:
   - name: t2
     location: 'dome firebrick'
     pin: 17
-data_dir: /home/pi/oven-data
+data_dir: /home/YOU/oven-data
 csv_retention_days: 30          # daily CSVs older than this are deleted
 calibration_file: /etc/calibration.yml
 influxdb_token: YOUR_TOKEN
@@ -32,9 +33,11 @@ influxdb_url: https://YOUR_INFLUX_HOST
 
 ### Install / deploy
 
-The logger runs as a systemd service. Clone the repo to `/home/pi/temp-logger`
-and run the one-time setup:
+The logger runs as a systemd service. Clone the repo into your home directory
+and run the one-time setup (it adapts the unit/logrotate to your user and
+checkout path automatically):
 ```
+cd ~
 git clone https://github.com/dlleigh/temp-logger.git
 cd temp-logger
 make setup          # apt deps, venv, systemd unit, logrotate

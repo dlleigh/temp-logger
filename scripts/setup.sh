@@ -13,6 +13,15 @@ VENV_DIR="$REPO_DIR/.venv"
 SERVICE_SRC="$REPO_DIR/systemd/temp-logger.service"
 LOGROTATE_SRC="$REPO_DIR/scripts/logrotate-temp-logger"
 CONFIG_PATH="/etc/temp-logger.yml"
+RUN_USER="$(id -un)"
+
+# The log path for logrotate comes from the config's `logfile:` if present,
+# otherwise defaults under this user's home.
+LOGFILE="$HOME/temp-logger.log"
+if [ -f "$CONFIG_PATH" ]; then
+    cfg_log="$(grep -E '^[[:space:]]*logfile:' "$CONFIG_PATH" | head -1 | sed -E 's/^[^:]*:[[:space:]]*//')"
+    [ -n "$cfg_log" ] && LOGFILE="$cfg_log"
+fi
 
 echo "==> Installing system packages"
 # numpy/scipy/yaml/dateutil are installed via apt: Debian ships prebuilt
@@ -34,13 +43,15 @@ echo "==> Installing pure-Python deps into the venv (no compilation)"
 "$VENV_DIR/bin/pip" install --upgrade pip
 "$VENV_DIR/bin/pip" install "influxdb-client==1.48.0"
 
-echo "==> Installing systemd unit"
-sudo cp "$SERVICE_SRC" /etc/systemd/system/temp-logger.service
+echo "==> Installing systemd unit (user=$RUN_USER, dir=$REPO_DIR)"
+sed -e "s#__REPO_DIR__#$REPO_DIR#g" -e "s#__USER__#$RUN_USER#g" \
+    "$SERVICE_SRC" | sudo tee /etc/systemd/system/temp-logger.service >/dev/null
 sudo systemctl daemon-reload
 sudo systemctl enable temp-logger.service
 
-echo "==> Installing logrotate rule"
-sudo cp "$LOGROTATE_SRC" /etc/logrotate.d/temp-logger
+echo "==> Installing logrotate rule (logfile=$LOGFILE)"
+sed -e "s#__LOGFILE__#$LOGFILE#g" -e "s#__USER__#$RUN_USER#g" \
+    "$LOGROTATE_SRC" | sudo tee /etc/logrotate.d/temp-logger >/dev/null
 
 if [ ! -f "$CONFIG_PATH" ]; then
     echo "!! WARNING: $CONFIG_PATH not found -- create it before starting the service."
